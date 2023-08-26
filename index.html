@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Age Calculator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            max-width: 700px;
+            width: 100%;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1 {
+            font-size: 2.5em;
+            color: #333;
+            margin-bottom: 20px;
+        }
+        label {
+            font-weight: bold;
+            color: #333;
+            width: 100%;
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+        input[type="date"] {
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            font-size: 1.2em;
+            outline: none;
+        }
+        .input-container {
+            width: 100%;
+            text-align: center;
+        }
+        button {
+            background-color: #333;
+            color: #fff;
+            padding: 15px 30px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            width: 100%;
+            font-size: 1.5em;
+        }
+        button:hover {
+            background-color: #555;
+        }
+        #result {
+            margin-top: 20px;
+            color: #333;
+            width: 100%;
+            text-align: center;
+        }
+        #ageMessage {
+            font-weight: bold;
+            font-size: 1.75em;
+            margin-bottom: 10px;
+        }
+        #ageContainer {
+            display: flex;
+            align-items: center;
+            justify-content: center; /* Center horizontally */
+            margin-top: 10px;
+        }
+        #age {
+            font-size: 3em;
+            white-space: nowrap;
+        }
+        #years {
+            font-size: 3em;
+            margin-left: 5px;
+            opacity: 0;
+        }
+        .invalid {
+            color: red;
+        }
+
+        /* Style for the dropdown */
+        select {
+            border: 2px solid #ccc;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 10px 0;
+            box-sizing: border-box;
+            font-size: 1.2em;
+            outline: none;
+            width: 100%;
+        }
+
+        /* Style for the custom date input */
+        .custom-date-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Age Calculator</h1>
+        <form id="ageCalculatorForm">
+            <div class="input-container">
+                <label for="birthdate">Enter Your Birthdate:</label>
+                <input type="date" id="birthdate" required>
+            </div>
+            <div class="input-container">
+                <label for="timeZone">Choose Time:</label>
+                <select id="timeZone" onchange="toggleCustomDate()">
+                    <option value="current">Current Time</option>
+                    <option value="custom">Custom Time</option>
+                </select>
+            </div>
+            <div class="input-container custom-date-input">
+                <label for="customDate">Enter Custom Date:</label>
+                <input type="date" id="customDate">
+            </div>
+            <button type="button" onclick="calculateAge()">Calculate Age</button>
+        </form>
+        <div id="result">
+            <p id="ageMessage">Your exact age will be displayed here.</p>
+            <div id="ageContainer">
+                <span id="age"></span>
+                <span id="years">Years</span>
+            </div>
+            <p id="dateTime" style="display: none;"></p>
+        </div>
+    </div>
+    
+    <script>
+        let ageUpdateInterval;
+        let timeZoneUpdateInterval;
+
+        function updateTimeZoneOption() {
+            const timeZoneSelect = document.getElementById('timeZone');
+            const userTimeZone = Intl.DateTimeFormat(undefined, { timeZoneName: 'short' }).resolvedOptions().timeZone;
+            const formattedCurrentTime = new Date().toLocaleString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: 'numeric',
+                minute: 'numeric',
+                second: 'numeric',
+                hour12: true,
+                timeZoneName: 'short'
+            });
+            const optionText = `Current Time (${userTimeZone}): ${formattedCurrentTime}`;
+            
+            timeZoneSelect.options[0].text = optionText;
+        }
+
+        updateTimeZoneOption();
+
+        timeZoneUpdateInterval = setInterval(updateTimeZoneOption, 2000);
+
+        function toggleCustomDate() {
+            const timeZoneSelect = document.getElementById('timeZone');
+            const customDateInput = document.querySelector('.custom-date-input');
+            if (timeZoneSelect.value === 'custom') {
+                customDateInput.style.display = 'block';
+            } else {
+                customDateInput.style.display = 'none';
+            }
+        }
+
+        function calculateAge() {
+            const birthdate = new Date(document.getElementById('birthdate').value);
+            const minDate = new Date();
+            minDate.setFullYear(minDate.getFullYear() - 120);
+            const maxDate = new Date();
+            maxDate.setFullYear(maxDate.getFullYear() - 1);
+
+            const ageMessage = document.getElementById('ageMessage');
+            const ageContainer = document.getElementById('ageContainer');
+            const ageSpan = document.getElementById('age');
+            const yearsSpan = document.getElementById('years');
+            const dateTimeDisplay = document.getElementById('dateTime');
+            const timeZoneSelect = document.getElementById('timeZone');
+            const selectedTimeZone = timeZoneSelect.value;
+
+            clearInterval(ageUpdateInterval);
+
+            if (birthdate < minDate || birthdate > maxDate || isNaN(birthdate)) {
+                ageMessage.textContent = 'Invalid';
+                ageSpan.textContent = '';
+                yearsSpan.style.opacity = 0;
+                ageContainer.classList.add('invalid');
+                dateTimeDisplay.style.display = 'none';
+            } else {
+                if (selectedTimeZone === 'current') {
+                    ageUpdateInterval = setInterval(function() {
+                        const today = new Date();
+                        const ageMilliseconds = today - birthdate;
+                        const ageSeconds = ageMilliseconds / 1000;
+                        const ageYears = ageSeconds / (365 * 24 * 3600);
+                        const formattedAge = ageYears.toFixed(8);
+
+                        ageMessage.textContent = 'Your exact age is:';
+                        ageSpan.textContent = formattedAge;
+                        yearsSpan.style.opacity = 1;
+                        ageContainer.classList.remove('invalid');
+
+                        dateTimeDisplay.style.display = 'none';
+                    }, 20);
+                } else if (selectedTimeZone === 'custom') {
+                    const customDate = new Date(document.getElementById('customDate').value);
+
+                    if (isNaN(customDate) || customDate <= birthdate) {
+                        ageMessage.textContent = 'Invalid';
+                        ageSpan.textContent = '';
+                        yearsSpan.style.opacity = 0;
+                        ageContainer.classList.add('invalid');
+                        dateTimeDisplay.style.display = 'none';
+                    } else {
+                        ageUpdateInterval = setInterval(function() {
+                            const ageMilliseconds = customDate - birthdate;
+                            const ageSeconds = ageMilliseconds / 1000;
+                            const ageYears = ageSeconds / (365 * 24 * 3600);
+                            const formattedAge = ageYears.toFixed(8);
+
+                            ageMessage.textContent = 'Your exact age is:';
+                            ageSpan.textContent = formattedAge;
+                            yearsSpan.style.opacity = 1;
+                            ageContainer.classList.remove('invalid');
+
+                            dateTimeDisplay.style.display = 'none';
+                        }, 20);
+                    }
+                } else {
+                    ageMessage.textContent = 'Your exact age will be displayed here.';
+                    ageSpan.textContent = '';
+                    yearsSpan.style.opacity = 0;
+                    ageContainer.classList.remove('invalid');
+                    dateTimeDisplay.style.display = 'none';
+                }
+            }
+        }
+    </script>
+</body>
+</html>
